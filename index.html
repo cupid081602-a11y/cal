@@ -1,0 +1,311 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국도로공사 휴게소 입찰 예정임대요율 예측 계산기</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold flex items-center">
+                        <i class="fas fa-calculator mr-3"></i>
+                        예정임대요율 예측 계산기
+                    </h1>
+                    <p class="text-blue-100 mt-2 text-sm md:text-base">한국도로공사 휴게소 입찰 전략 수립 도구</p>
+                </div>
+                <button id="helpBtn" class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg transition duration-200">
+                    <i class="fas fa-question-circle mr-2"></i>도움말
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Progress Indicator -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between max-w-4xl mx-auto">
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <div id="step1Circle" class="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold step-circle active">1</div>
+                        <div class="flex-1 h-1 bg-gray-300 mx-2">
+                            <div id="progress1to2" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <p class="text-sm mt-2 font-medium">복수예비임대요율 입력</p>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <div id="step2Circle" class="w-12 h-12 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold step-circle">2</div>
+                        <div class="flex-1 h-1 bg-gray-300 mx-2">
+                            <div id="progress2to3" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <p class="text-sm mt-2 font-medium text-gray-600">선택 빈도 예측</p>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center">
+                        <div id="step3Circle" class="w-12 h-12 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center font-bold step-circle">3</div>
+                    </div>
+                    <p class="text-sm mt-2 font-medium text-gray-600">예측 결과</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 1: 복수예비임대요율 입력 -->
+        <div id="step1" class="step-content bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <span class="text-blue-600">STEP 1.</span> 복수예비임대요율 입력
+                </h2>
+                <p class="text-gray-600">한국도로공사에서 제시한 15개의 복수예비임대요율을 입력해주세요.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 15개의 입력 필드 -->
+                <div class="rate-input-group" data-index="1"></div>
+                <div class="rate-input-group" data-index="2"></div>
+                <div class="rate-input-group" data-index="3"></div>
+                <div class="rate-input-group" data-index="4"></div>
+                <div class="rate-input-group" data-index="5"></div>
+                <div class="rate-input-group" data-index="6"></div>
+                <div class="rate-input-group" data-index="7"></div>
+                <div class="rate-input-group" data-index="8"></div>
+                <div class="rate-input-group" data-index="9"></div>
+                <div class="rate-input-group" data-index="10"></div>
+                <div class="rate-input-group" data-index="11"></div>
+                <div class="rate-input-group" data-index="12"></div>
+                <div class="rate-input-group" data-index="13"></div>
+                <div class="rate-input-group" data-index="14"></div>
+                <div class="rate-input-group" data-index="15"></div>
+            </div>
+
+            <div class="mt-6 flex justify-between items-center">
+                <button id="loadSampleData" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
+                    <i class="fas fa-database mr-2"></i>예시 데이터 불러오기
+                </button>
+                <button id="nextStep1" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200">
+                    다음 단계 <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: 입찰자 선택 빈도 예측 -->
+        <div id="step2" class="step-content bg-white rounded-xl shadow-lg p-6 mb-6 hidden">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                    <span class="text-blue-600">STEP 2.</span> 입찰자 선택 빈도 예측
+                </h2>
+                <p class="text-gray-600">각 번호가 선택될 예상 횟수를 입력해주세요. (예: 100명 × 2개 선택 = 총 200회)</p>
+            </div>
+
+            <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">예상 입찰 참가자 수</label>
+                        <input type="number" id="expectedBidders" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="100" min="1">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">1인당 선택 개수</label>
+                        <input type="number" id="selectionsPerBidder" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="2" min="1" max="5">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">총 예상 선택 횟수</label>
+                        <div class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg font-bold text-blue-600" id="totalExpectedSelections">200회</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="border border-gray-300 px-4 py-2 text-left">번호</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">복수예비임대요율</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">예상 선택 횟수</th>
+                            <th class="border border-gray-300 px-4 py-2 text-left">선택 비율</th>
+                        </tr>
+                    </thead>
+                    <tbody id="frequencyTableBody">
+                        <!-- JavaScript로 동적 생성 -->
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-gray-100 font-bold">
+                            <td colspan="2" class="border border-gray-300 px-4 py-2">합계</td>
+                            <td class="border border-gray-300 px-4 py-2" id="totalFrequency">0회</td>
+                            <td class="border border-gray-300 px-4 py-2" id="totalPercentage">0%</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="mt-6 flex justify-between items-center">
+                <button id="prevStep2" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>이전 단계
+                </button>
+                <div class="flex gap-2">
+                    <button id="autoDistribute" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200">
+                        <i class="fas fa-magic mr-2"></i>자동 분배
+                    </button>
+                    <button id="nextStep2" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200">
+                        예측 실행 <i class="fas fa-play ml-2"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: 예측 결과 및 분석 -->
+        <div id="step3" class="step-content hidden">
+            <!-- 최종 결과 카드 -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-6 mb-6 text-white">
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold mb-4">
+                        <i class="fas fa-chart-line mr-2"></i>최종 예측 결과
+                    </h2>
+                    <div class="bg-white bg-opacity-20 rounded-lg p-6 backdrop-blur">
+                        <p class="text-lg mb-2">예상 예정임대요율</p>
+                        <p class="text-5xl font-bold" id="finalPredictedRate">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 상세 계산 과정 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-calculator mr-2"></i>상세 계산 과정
+                </h3>
+                <div id="calculationDetails" class="space-y-4">
+                    <!-- JavaScript로 동적 생성 -->
+                </div>
+            </div>
+
+            <!-- 차트 영역 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">선택 빈도 분포</h3>
+                    <div style="height: 300px;">
+                        <canvas id="frequencyChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">요율 vs 선택 횟수</h3>
+                    <div style="height: 300px;">
+                        <canvas id="rateVsFrequencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 시나리오 저장 및 관리 -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-save mr-2"></i>시나리오 관리
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">시나리오 이름</label>
+                        <input type="text" id="scenarioName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="예: 보수적 예측">
+                    </div>
+                    <div class="flex items-end">
+                        <button id="saveScenario" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200 w-full">
+                            <i class="fas fa-save mr-2"></i>현재 시나리오 저장
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="savedScenarios" class="space-y-2">
+                    <!-- 저장된 시나리오 목록 -->
+                </div>
+            </div>
+
+            <!-- 액션 버튼 -->
+            <div class="flex justify-between items-center">
+                <button id="prevStep3" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>이전 단계
+                </button>
+                <button id="newCalculation" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200">
+                    <i class="fas fa-redo mr-2"></i>새로운 계산
+                </button>
+            </div>
+        </div>
+
+        <!-- 법적 고지 -->
+        <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p class="text-sm text-yellow-800">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                <strong>법적 고지:</strong> 본 계산기는 사용자의 예측 입력을 기반으로 한 시뮬레이션 도구입니다. 
+                실제 입찰 결과는 다양한 변수에 의해 달라질 수 있으며, 본 계산 결과를 투자 결정의 유일한 근거로 
+                사용하지 마시기 바랍니다. 모든 입찰 결정에 대한 책임은 사용자에게 있습니다.
+            </p>
+        </div>
+    </main>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800">사용 방법</h2>
+                        <button id="closeHelp" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-bold text-lg text-blue-600 mb-2">1단계: 복수예비임대요율 입력</h3>
+                            <p class="text-gray-600">한국도로공사에서 제시한 15개의 복수예비임대요율을 정확히 입력합니다. 
+                            소수점 넷째 자리까지 입력 가능합니다.</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-bold text-lg text-blue-600 mb-2">2단계: 선택 빈도 예측</h3>
+                            <p class="text-gray-600">다른 입찰 참가자들이 각 번호를 선택할 예상 횟수를 입력합니다. 
+                            예를 들어, 100명이 각 2개씩 선택한다면 총 200회의 선택이 이루어집니다.</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="font-bold text-lg text-blue-600 mb-2">3단계: 결과 확인</h3>
+                            <p class="text-gray-600">입력한 데이터를 바탕으로 예상 예정임대요율이 자동 계산됩니다. 
+                            상위 5개 번호 중 3개의 산술평균으로 계산되며, 소수점 넷째 자리에서 올림 처리됩니다.</p>
+                        </div>
+                        
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h4 class="font-bold text-blue-800 mb-2">💡 팁</h4>
+                            <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
+                                <li>여러 시나리오를 저장하고 비교해보세요</li>
+                                <li>과거 입찰 데이터를 참고하여 패턴을 분석해보세요</li>
+                                <li>보수적, 중립적, 공격적 시나리오를 각각 만들어보세요</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/main.js"></script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"973040313da1964d","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.8.0","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
