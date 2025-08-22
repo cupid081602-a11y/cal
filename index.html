@@ -272,7 +272,7 @@
                 <div>
                     <h3 class="font-bold text-lg text-blue-600 mb-2">2단계: 선택 빈도 예측</h3>
                     <p class="text-gray-600">다른 입찰 참가자들이 각 번호를 선택할 예상 횟수를 입력합니다. 
-                    예를 들어, 100명이 각 2개씩 선택한다면 총 200회의 선택이 이루어집니다.</p>
+                    예를 들어, 100명 × 2개 선택 = 총 200회입니다.</p>
                 </div>
                 <div>
                     <h3 class="font-bold text-lg text-blue-600 mb-2">3단계: 결과 확인</h3>
@@ -365,8 +365,8 @@
                 div.className = 'flex items-center';
                 div.innerHTML = `
                     <label for="rate${i + 1}" class="w-12 text-center text-sm font-medium text-gray-700 mr-2">${i + 1}.</label>
-                    <input type="number" id="rate${i + 1}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" step="0.0001" placeholder="예: 90.1234">
-                `;
+                    <input type="number" id="rate${i + 1}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" step="0.0001">
+                `; // Removed placeholder text
                 rateInputsContainer.appendChild(div);
                 rateInputs.push(document.getElementById(`rate${i + 1}`));
             }
@@ -463,10 +463,10 @@
                 }
             };
 
-            // Auto distribute frequencies (evenly across all rates)
+            // Auto distribute frequencies (bell curve-like)
             document.getElementById('autoDistribute').addEventListener('click', () => {
                 const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
-                if (expectedTotalSelections === 0 || isNaN(expectedTotalSelections)) {
+                if (isNaN(expectedTotalSelections) || expectedTotalSelections === 0) { // Check for NaN or zero
                     const messageBox = createMessageBox("예상 총 선택 횟수를 먼저 입력해주세요.", "warning");
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 3000);
@@ -474,10 +474,30 @@
                 }
 
                 const frequencies = Array(numRates).fill(0);
-                // Distribute selections as evenly as possible
+                const centerIndex = Math.floor(numRates / 2); // e.g., 7 for 15 items (0-14)
+
+                // Assign higher weights to center, decreasing outwards
+                const weights = Array(numRates).fill(0);
+                for (let i = 0; i < numRates; i++) {
+                    weights[i] = numRates - Math.abs(i - centerIndex); // Simple linear decrease from center
+                }
+
+                const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+                const cumulativeWeights = [];
+                let cumulativeSum = 0;
+                for (let i = 0; i < numRates; i++) {
+                    cumulativeSum += weights[i];
+                    cumulativeWeights.push(cumulativeSum);
+                }
+
                 for (let i = 0; i < expectedTotalSelections; i++) {
-                    const index = Math.floor(Math.random() * numRates); // Randomly pick any of the 15 rates
-                    frequencies[index]++;
+                    const rand = Math.random() * totalWeight;
+                    for (let j = 0; j < numRates; j++) {
+                        if (rand < cumulativeWeights[j]) {
+                            frequencies[j]++;
+                            break;
+                        }
+                    }
                 }
 
                 document.querySelectorAll('#frequencyTableBody input[type="number"]').forEach((freqInput, index) => {
@@ -513,10 +533,10 @@
                 // Validate rates
                 const hasEmptyRate = rateInputs.some(input => input.value.trim() === '');
                 if (hasEmptyRate) {
-                    const messageBox = createMessageBox("모든 15개의 복수예비임대요율을 입력해주세요.", "error");
+                    const messageBox = createMessageBox("모든 15개의 복수예비임대요율을 입력해주세요.", "error"); // Re-added warning
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 3000);
-                    return;
+                    return; 
                 }
                 goToStep(1);
                 // Generate frequency inputs only once when entering Step 2
