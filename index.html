@@ -13,7 +13,30 @@
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css">
+    <!-- Custom styles can go here if needed, but Tailwind is preferred -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        .step-circle.active {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+        }
+        .step-circle {
+            transition: background-color 0.5s, color 0.5s;
+        }
+        /* Chart container for responsiveness */
+        .chart-container {
+            position: relative;
+            height: 300px; /* Or adjust as needed */
+            width: 100%;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
@@ -66,7 +89,8 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="rate-inputs-container">
-                </div>
+                <!-- Rate inputs will be generated here by JS -->
+            </div>
 
             <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <button id="loadSampleData" class="w-full sm:w-auto bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition duration-200">
@@ -79,7 +103,7 @@
         </div>
 
         <div id="step2" class="step-content bg-white rounded-xl shadow-lg p-6 mb-6 hidden">
-             <div class="mb-6">
+            <div class="mb-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">
                     <span class="text-blue-600">STEP 2.</span> 입찰자 선택 빈도 예측
                 </h2>
@@ -114,7 +138,8 @@
                         </tr>
                     </thead>
                     <tbody id="frequencyTableBody">
-                        </tbody>
+                        <!-- Frequency rows will be generated here by JS -->
+                    </tbody>
                     <tfoot>
                         <tr class="bg-gray-100 font-bold">
                             <td colspan="2" class="border border-gray-300 px-4 py-2 text-right">합계</td>
@@ -158,7 +183,8 @@
                     <i class="fas fa-calculator mr-2"></i>상세 계산 과정
                 </h3>
                 <div id="calculationDetails" class="space-y-4">
-                    </div>
+                    <!-- Calculation details will be shown here -->
+                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -175,6 +201,18 @@
                     </div>
                 </div>
             </div>
+
+            <!-- NEW SECTION FOR COMBINATIONS -->
+            <div id="allCombinationsSection" class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-cube mr-2"></i>모든 13C3 조합 분석 (총 <span id="combinationsCount">0</span>개)
+                </h3>
+                <p class="text-gray-600 mb-4">입력된 요율 중 상위 13개에서 3개를 선택하는 모든 경우의 수 (<strong class="text-blue-600">13C3 = 286가지</strong>)와 그 산술평균을 보여줍니다.</p>
+                <div id="combinationsOutput" class="max-h-80 overflow-y-auto border border-gray-200 rounded-lg p-4 space-y-2">
+                    <!-- Combinations will be rendered here by JS -->
+                </div>
+            </div>
+            <!-- END NEW SECTION -->
 
             <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
                 <h3 class="text-xl font-bold text-gray-800 mb-4">
@@ -193,7 +231,8 @@
                 </div>
                 
                 <div id="savedScenarios" class="space-y-2">
-                    </div>
+                    <!-- Saved scenarios will be listed here by JS -->
+                </div>
             </div>
 
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -238,7 +277,7 @@
                 <div>
                     <h3 class="font-bold text-lg text-blue-600 mb-2">3단계: 결과 확인</h3>
                     <p class="text-gray-600">입력한 데이터를 바탕으로 예상 예정임대요율이 자동 계산됩니다. 
-                    계산 공식: 최다 선택 5개 번호 중 **요율이 가장 높은 3개**를 산술평균 후, 소수점 넷째 자리에서 올림 처리됩니다.</p>
+                    계산 공식: 최다 선택 5개 번호 중 <strong>요율이 가장 높은 3개</strong>를 산술평균 후, 소수점 넷째 자리에서 올림 처리됩니다.</p>
                 </div>
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 class="font-bold text-blue-800 mb-2">💡 팁</h4>
@@ -246,12 +285,694 @@
                         <li>'자동 분배' 기능은 입찰자들이 중간 번호를 선호하는 경향을 반영하여 예상 횟수를 자동으로 채워줍니다.</li>
                         <li>여러 시나리오를 저장하고 비교하여 최적의 입찰 전략을 수립해보세요.</li>
                         <li>과거 입찰 데이터를 참고하여 패턴을 분석해보는 것도 좋은 방법입니다.</li>
+                        <li>새롭게 추가된 '모든 13C3 조합 분석' 섹션에서는 상위 13개 요율에서 3개를 선택했을 때의 모든 평균값을 확인할 수 있습니다.</li>
                     </ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="main.js"></script>
+    <script>
+        // main.js content
+        document.addEventListener('DOMContentLoaded', () => {
+            const numRates = 15;
+            const rateInputsContainer = document.getElementById('rate-inputs-container');
+            const frequencyTableBody = document.getElementById('frequencyTableBody');
+            const expectedBiddersInput = document.getElementById('expectedBidders');
+            const selectionsPerBidderInput = document.getElementById('selectionsPerBidder');
+            const totalExpectedSelectionsDiv = document.getElementById('totalExpectedSelections');
+            const totalFrequencyCell = document.getElementById('totalFrequency');
+            const totalPercentageCell = document.getElementById('totalPercentage');
+            const finalPredictedRateDisplay = document.getElementById('finalPredictedRate');
+            const calculationDetailsDiv = document.getElementById('calculationDetails');
+
+            // Steps navigation
+            const steps = ['step1', 'step2', 'step3'];
+            let currentStep = 0;
+
+            const updateStepUI = () => {
+                steps.forEach((stepId, index) => {
+                    const stepElement = document.getElementById(stepId);
+                    const circle = document.getElementById(`step${index + 1}Circle`);
+                    const progressBar = document.getElementById(`progress${index}to${index + 1}`);
+
+                    if (index === currentStep) {
+                        stepElement.classList.remove('hidden');
+                        circle.classList.add('active');
+                        circle.classList.remove('bg-gray-300', 'text-gray-600');
+                        circle.classList.add('bg-blue-600', 'text-white');
+                    } else {
+                        stepElement.classList.add('hidden');
+                        circle.classList.remove('active', 'bg-blue-600', 'text-white');
+                        circle.classList.add('bg-gray-300', 'text-gray-600');
+                    }
+
+                    if (progressBar) {
+                        if (index < currentStep) {
+                            progressBar.style.width = '100%';
+                        } else {
+                            progressBar.style.width = '0%';
+                        }
+                    }
+                });
+
+                // Update text colors for step descriptions
+                document.querySelectorAll('.step-circle').forEach((circle, index) => {
+                    const paragraph = circle.nextElementSibling;
+                    if (paragraph) {
+                        if (index <= currentStep) {
+                            paragraph.classList.add('text-gray-800');
+                            paragraph.classList.remove('text-gray-600');
+                        } else {
+                            paragraph.classList.add('text-gray-600');
+                            paragraph.classList.remove('text-gray-800');
+                        }
+                    }
+                });
+            };
+
+            const goToStep = (stepIndex) => {
+                if (stepIndex >= 0 && stepIndex < steps.length) {
+                    currentStep = stepIndex;
+                    updateStepUI();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+
+            // Initialize rate input fields
+            const rateInputs = [];
+            for (let i = 0; i < numRates; i++) {
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                div.innerHTML = `
+                    <label for="rate${i + 1}" class="w-12 text-center text-sm font-medium text-gray-700 mr-2">${i + 1}.</label>
+                    <input type="number" id="rate${i + 1}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" step="0.0001" placeholder="예: 90.1234">
+                `;
+                rateInputsContainer.appendChild(div);
+                rateInputs.push(document.getElementById(`rate${i + 1}`));
+            }
+
+            // Sample data load
+            document.getElementById('loadSampleData').addEventListener('click', () => {
+                const sampleRates = [
+                    85.1234, 86.5678, 87.9012, 88.3456, 89.7890,
+                    90.1234, 91.5678, 92.9012, 93.3456, 94.7890,
+                    95.1234, 96.5678, 97.9012, 98.3456, 99.7890
+                ];
+                rateInputs.forEach((input, index) => {
+                    input.value = sampleRates[index] ? sampleRates[index].toFixed(4) : '';
+                });
+            });
+
+            // Update total expected selections
+            const updateTotalExpectedSelections = () => {
+                const bidders = parseInt(expectedBiddersInput.value) || 0;
+                const selections = parseInt(selectionsPerBidderInput.value) || 0;
+                const total = bidders * selections;
+                totalExpectedSelectionsDiv.textContent = `${total}회`;
+            };
+
+            expectedBiddersInput.addEventListener('input', updateTotalExpectedSelections);
+            selectionsPerBidderInput.addEventListener('input', updateTotalExpectedSelections);
+
+            // Populate frequency table and calculate totals
+            const updateFrequencyTable = () => {
+                const rates = rateInputs.map(input => parseFloat(input.value)).filter(rate => !isNaN(rate));
+                frequencyTableBody.innerHTML = '';
+                let totalFrequency = 0;
+                let totalPercentage = 0;
+
+                const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
+
+                rates.forEach((rate, index) => {
+                    const tr = document.createElement('tr');
+                    const frequencyInputId = `freq${index + 1}`;
+                    const frequency = parseInt(document.getElementById(frequencyInputId)?.value || '0');
+                    const percentage = expectedTotalSelections > 0 ? (frequency / expectedTotalSelections * 100).toFixed(2) : 0;
+
+                    tr.innerHTML = `
+                        <td class="border border-gray-300 px-4 py-2">${index + 1}</td>
+                        <td class="border border-gray-300 px-4 py-2">${rate.toFixed(4)}</td>
+                        <td class="border border-gray-300 px-4 py-2">
+                            <input type="number" id="${frequencyInputId}" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" value="${frequency}" min="0">
+                        </td>
+                        <td class="border border-gray-300 px-4 py-2 text-gray-700 percentage-cell">${percentage}%</td>
+                    `;
+                    frequencyTableBody.appendChild(tr);
+
+                    totalFrequency += frequency;
+                    // For total percentage, sum actual percentages to avoid floating point issues from (totalFreq / totalExpected)
+                    totalPercentage += parseFloat(percentage);
+                });
+
+                document.querySelectorAll('#frequencyTableBody input[type="number"]').forEach(input => {
+                    input.addEventListener('input', updateFrequencyTable);
+                });
+
+                totalFrequencyCell.textContent = `${totalFrequency}회`;
+                if (expectedTotalSelections > 0) {
+                    totalPercentageCell.textContent = `${(totalFrequency / expectedTotalSelections * 100).toFixed(2)}%`;
+                } else {
+                    totalPercentageCell.textContent = '0.00%';
+                }
+            };
+
+            // Auto distribute frequencies (bell curve-like)
+            document.getElementById('autoDistribute').addEventListener('click', () => {
+                const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
+                if (expectedTotalSelections === 0 || isNaN(expectedTotalSelections)) {
+                    // Display a temporary message to the user that total expected selections cannot be 0
+                    const messageBox = createMessageBox("예상 총 선택 횟수를 먼저 입력해주세요.", "warning");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                    return;
+                }
+
+                // Simple bell curve distribution approximation
+                const frequencies = Array(numRates).fill(0);
+                const center = Math.floor(numRates / 2);
+
+                for (let i = 0; i < expectedTotalSelections; i++) {
+                    // Randomly pick a rate, biasing towards the center
+                    let index = Math.floor(Math.random() * numRates);
+                    // A simple bias: if random is too far, try again closer to center
+                    if (Math.abs(index - center) > numRates / 4) {
+                        index = Math.floor(Math.random() * numRates / 2) + Math.floor(numRates / 4);
+                    }
+                    if (index < 0) index = 0;
+                    if (index >= numRates) index = numRates - 1;
+                    frequencies[index]++;
+                }
+
+                rateInputs.forEach((_, index) => {
+                    const freqInput = document.getElementById(`freq${index + 1}`);
+                    if (freqInput) {
+                        freqInput.value = frequencies[index];
+                    }
+                });
+                updateFrequencyTable();
+            });
+
+            // Combinations function for the new section (13C3)
+            function combinations(arr, k) {
+                const result = [];
+                function backtrack(start, currentCombination) {
+                    if (currentCombination.length === k) {
+                        result.push([...currentCombination]);
+                        return;
+                    }
+                    for (let i = start; i < arr.length; i++) {
+                        currentCombination.push(arr[i]);
+                        backtrack(i + 1, currentCombination);
+                        currentCombination.pop();
+                    }
+                }
+                backtrack(0, []);
+                return result;
+            }
+
+            // Chart instances
+            let frequencyChartInstance;
+            let rateVsFrequencyChartInstance;
+
+            // Navigation buttons
+            document.getElementById('nextStep1').addEventListener('click', () => {
+                // Validate rates
+                const hasEmptyRate = rateInputs.some(input => input.value.trim() === '');
+                if (hasEmptyRate) {
+                    const messageBox = createMessageBox("모든 15개의 복수예비임대요율을 입력해주세요.", "error");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                    return;
+                }
+                goToStep(1);
+                updateFrequencyTable(); // Initialize frequency table after rates are entered
+            });
+
+            document.getElementById('prevStep2').addEventListener('click', () => {
+                goToStep(0);
+            });
+
+            document.getElementById('nextStep2').addEventListener('click', () => {
+                const totalFreq = Array.from(document.querySelectorAll('#frequencyTableBody input'))
+                                    .map(input => parseInt(input.value) || 0)
+                                    .reduce((sum, current) => sum + current, 0);
+                const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
+
+                if (totalFreq === 0) {
+                     const messageBox = createMessageBox("예상 선택 횟수를 입력해주세요.", "error");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                    return;
+                }
+                
+                if (totalFreq !== expectedTotalSelections) {
+                    const messageBox = createMessageBox(`총 예상 선택 횟수(${expectedTotalSelections}회)와 입력된 선택 횟수(${totalFreq}회)가 일치하지 않습니다.`, "warning");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 5000);
+                    return;
+                }
+
+                // Perform prediction
+                const ratesWithFrequencies = rateInputs.map((input, index) => ({
+                    rate: parseFloat(input.value),
+                    frequency: parseInt(document.getElementById(`freq${index + 1}`).value) || 0,
+                    originalIndex: index + 1
+                })).filter(item => !isNaN(item.rate));
+
+                // 1. Sort by frequency in descending order
+                const sortedByFrequency = [...ratesWithFrequencies].sort((a, b) => b.frequency - a.frequency);
+
+                // 2. Take the top 5 most selected numbers
+                const top5Selected = sortedByFrequency.slice(0, 5);
+
+                // 3. From these top 5, sort them by rate in descending order
+                const sortedTop5ByRate = [...top5Selected].sort((a, b) => b.rate - a.rate);
+
+                // 4. Take the highest 3 rates
+                const highest3OfTop5 = sortedTop5ByRate.slice(0, 3);
+
+                // 5. Calculate their arithmetic mean
+                let predictedRate = 0;
+                let calculationSteps = [];
+
+                if (highest3OfTop5.length > 0) {
+                    const sumOfHighest3 = highest3OfTop5.reduce((sum, item) => sum + item.rate, 0);
+                    predictedRate = sumOfHighest3 / highest3OfTop5.length;
+
+                    // Round up to the 4th decimal place
+                    predictedRate = Math.ceil(predictedRate * 10000) / 10000;
+
+                    // Generate calculation details
+                    calculationSteps.push({
+                        step: "1. 예상 선택 횟수가 높은 상위 5개 요율 선정",
+                        detail: top5Selected.map(item => `${item.originalIndex}번 (${item.rate.toFixed(4)}) - ${item.frequency}회 선택`).join(', ')
+                    });
+                    calculationSteps.push({
+                        step: "2. 선정된 상위 5개 요율 중 가장 높은 3개 요율",
+                        detail: highest3OfTop5.map(item => `${item.originalIndex}번 (${item.rate.toFixed(4)})`).join(', ')
+                    });
+                    calculationSteps.push({
+                        step: "3. 선택된 3개 요율의 합계",
+                        detail: highest3OfTop5.map(item => item.rate.toFixed(4)).join(' + ') + ` = ${sumOfHighest3.toFixed(4)}`
+                    });
+                    calculationSteps.push({
+                        step: "4. 산술평균 계산",
+                        detail: `${sumOfHighest3.toFixed(4)} / 3 = ${(sumOfHighest3 / highest3OfTop5.length).toFixed(4)}`
+                    });
+                    calculationSteps.push({
+                        step: "5. 소수점 넷째 자리에서 올림",
+                        detail: `${(sumOfHighest3 / highest3OfTop5.length).toFixed(4)} &rarr; ${predictedRate.toFixed(4)}`
+                    });
+
+                } else {
+                    calculationSteps.push({ step: "계산 불가", detail: "충분한 데이터를 찾을 수 없습니다." });
+                }
+
+                finalPredictedRateDisplay.textContent = `${predictedRate.toFixed(4)}%`;
+                
+                calculationDetailsDiv.innerHTML = calculationSteps.map(step => `
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <p class="font-semibold text-gray-800">${step.step}</p>
+                        <p class="text-gray-600 ml-4">${step.detail}</p>
+                    </div>
+                `).join('');
+
+
+                // Update Charts
+                if (frequencyChartInstance) frequencyChartInstance.destroy();
+                if (rateVsFrequencyChartInstance) rateVsFrequencyChartInstance.destroy();
+
+                const labels = ratesWithFrequencies.map(item => `${item.originalIndex}번 (${item.rate.toFixed(4)}%)`);
+                const frequenciesData = ratesWithFrequencies.map(item => item.frequency);
+                const ratesData = ratesWithFrequencies.map(item => item.rate);
+
+                // Frequency Distribution Chart
+                const frequencyCtx = document.getElementById('frequencyChart').getContext('2d');
+                frequencyChartInstance = new Chart(frequencyCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '예상 선택 횟수',
+                            data: frequenciesData,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)', // blue-500 with opacity
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '선택 횟수'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: '요율 번호 (요율)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+
+                // Rate vs Frequency Chart (Scatter Plot or Bar)
+                const rateVsFrequencyCtx = document.getElementById('rateVsFrequencyChart').getContext('2d');
+                rateVsFrequencyChartInstance = new Chart(rateVsFrequencyCtx, {
+                    type: 'scatter', // Use scatter for clear visualization
+                    data: {
+                        datasets: [{
+                            label: '요율 vs 선택 횟수',
+                            data: ratesWithFrequencies.map(item => ({ x: item.rate, y: item.frequency, label: `${item.originalIndex}번` })),
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)', // green-500 with opacity
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: {
+                                    display: true,
+                                    text: '복수예비임대요율 (%)'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '예상 선택 횟수'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.raw.label) { // Custom label property for each point
+                                            label += context.raw.label + ' - ';
+                                        }
+                                        label += `요율: ${context.raw.x.toFixed(4)}%, 횟수: ${context.raw.y}회`;
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Generate and display all 13C3 combinations
+                const allRates = Array.from(document.querySelectorAll('#rate-inputs-container input'))
+                    .map(input => parseFloat(input.value))
+                    .filter(rate => !isNaN(rate))
+                    .sort((a, b) => b - a); // Sort descending to easily get top 13
+
+                // Take the top 13 rates for combinations (if available)
+                const ratesForCombinations = allRates.slice(0, 13);
+                
+                const all3Combinations = combinations(ratesForCombinations, 3);
+
+                const combinationsOutput = document.getElementById('combinationsOutput');
+                combinationsOutput.innerHTML = ''; // Clear previous content
+
+                all3Combinations.forEach((combo, index) => {
+                    const sum = combo.reduce((acc, curr) => acc + curr, 0);
+                    const avg = sum / combo.length;
+                    const formattedAvg = avg.toFixed(4); // Round to 4 decimal places
+
+                    const comboDiv = document.createElement('div');
+                    comboDiv.className = 'flex justify-between items-center text-sm p-2 rounded-md bg-gray-50 hover:bg-gray-100';
+                    comboDiv.innerHTML = `
+                        <span class="font-medium text-gray-700">${index + 1}. [${combo.map(r => r.toFixed(4)).join(', ')}]</span>
+                        <span class="font-bold text-blue-700">${formattedAvg}%</span>
+                    `;
+                    combinationsOutput.appendChild(comboDiv);
+                });
+
+                document.getElementById('combinationsCount').textContent = all3Combinations.length;
+
+
+                goToStep(2); // Go to results step
+            });
+
+            document.getElementById('prevStep3').addEventListener('click', () => {
+                goToStep(1);
+            });
+
+            document.getElementById('newCalculation').addEventListener('click', () => {
+                // Clear all inputs and reset state
+                rateInputs.forEach(input => input.value = '');
+                expectedBiddersInput.value = '100';
+                selectionsPerBidderInput.value = '2';
+                totalExpectedSelectionsDiv.textContent = '200회';
+                frequencyTableBody.innerHTML = '';
+                totalFrequencyCell.textContent = '0회';
+                totalPercentageCell.textContent = '';
+                finalPredictedRateDisplay.textContent = '-';
+                calculationDetailsDiv.innerHTML = '';
+                document.getElementById('combinationsOutput').innerHTML = ''; // Clear combinations
+                document.getElementById('combinationsCount').textContent = '0'; // Reset combinations count
+                document.getElementById('scenarioName').value = ''; // Clear scenario name
+
+                // Destroy charts if they exist
+                if (frequencyChartInstance) frequencyChartInstance.destroy();
+                if (rateVsFrequencyChartInstance) rateVsFrequencyChartInstance.destroy();
+                frequencyChartInstance = null;
+                rateVsFrequencyChartInstance = null;
+
+                loadScenarios(); // Reload saved scenarios
+
+                goToStep(0);
+            });
+
+            // Help Modal Logic
+            const helpBtn = document.getElementById('helpBtn');
+            const helpModal = document.getElementById('helpModal');
+            const closeHelpBtn = document.getElementById('closeHelp');
+
+            helpBtn.addEventListener('click', () => {
+                helpModal.classList.remove('hidden');
+            });
+
+            closeHelpBtn.addEventListener('click', () => {
+                helpModal.classList.add('hidden');
+            });
+
+            // Close modal when clicking outside
+            helpModal.addEventListener('click', (e) => {
+                if (e.target === helpModal) {
+                    helpModal.classList.add('hidden');
+                }
+            });
+
+            // Scenario Management (using Local Storage for now)
+            const scenarioNameInput = document.getElementById('scenarioName');
+            const saveScenarioBtn = document.getElementById('saveScenario');
+            const savedScenariosDiv = document.getElementById('savedScenarios');
+
+            const saveScenario = () => {
+                const scenarioName = scenarioNameInput.value.trim();
+                if (!scenarioName) {
+                    const messageBox = createMessageBox("시나리오 이름을 입력해주세요.", "error");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                    return;
+                }
+
+                const currentScenario = {
+                    name: scenarioName,
+                    rates: rateInputs.map(input => parseFloat(input.value) || 0),
+                    frequencies: Array.from(document.querySelectorAll('#frequencyTableBody input')).map(input => parseInt(input.value) || 0),
+                    expectedBidders: parseInt(expectedBiddersInput.value) || 0,
+                    selectionsPerBidder: parseInt(selectionsPerBidderInput.value) || 0,
+                    predictedRate: parseFloat(finalPredictedRateDisplay.textContent.replace('%', '')) || 0,
+                    timestamp: new Date().toLocaleString('ko-KR')
+                };
+
+                const scenarios = JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]');
+                scenarios.push(currentScenario);
+                localStorage.setItem('bidCalculatorScenarios', JSON.stringify(scenarios));
+
+                const messageBox = createMessageBox("시나리오가 성공적으로 저장되었습니다!", "success");
+                document.body.appendChild(messageBox);
+                setTimeout(() => messageBox.remove(), 3000);
+
+                scenarioNameInput.value = ''; // Clear input after saving
+                loadScenarios();
+            };
+
+            const loadScenario = (index) => {
+                const scenarios = JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]');
+                const scenario = scenarios[index];
+
+                if (scenario) {
+                    rateInputs.forEach((input, i) => input.value = (scenario.rates[i] || 0).toFixed(4));
+                    expectedBiddersInput.value = scenario.expectedBidders;
+                    selectionsPerBidderInput.value = scenario.selectionsPerBidder;
+                    updateTotalExpectedSelections(); // Update calculated total selections
+
+                    // Populate frequency inputs
+                    updateFrequencyTable(); // First, generate empty frequency inputs
+                    scenario.frequencies.forEach((freq, i) => {
+                        const freqInput = document.getElementById(`freq${i + 1}`);
+                        if (freqInput) freqInput.value = freq;
+                    });
+                    updateFrequencyTable(); // Update table with loaded frequencies
+
+                    // Trigger the prediction logic to display final rate and charts
+                    document.getElementById('nextStep2').click();
+
+                    const messageBox = createMessageBox(`'${scenario.name}' 시나리오를 불러왔습니다.`, "info");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                }
+            };
+
+            const deleteScenario = (index) => {
+                let scenarios = JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]');
+                const deletedName = scenarios[index]?.name;
+                scenarios.splice(index, 1);
+                localStorage.setItem('bidCalculatorScenarios', JSON.stringify(scenarios));
+                loadScenarios();
+
+                const messageBox = createMessageBox(`'${deletedName}' 시나리오가 삭제되었습니다.`, "info");
+                document.body.appendChild(messageBox);
+                setTimeout(() => messageBox.remove(), 3000);
+            };
+
+            const loadScenarios = () => {
+                const scenarios = JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]');
+                savedScenariosDiv.innerHTML = '';
+                if (scenarios.length === 0) {
+                    savedScenariosDiv.innerHTML = '<p class="text-gray-500 italic">저장된 시나리오가 없습니다.</p>';
+                    return;
+                }
+
+                scenarios.forEach((scenario, index) => {
+                    const scenarioDiv = document.createElement('div');
+                    scenarioDiv.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 shadow-sm';
+                    scenarioDiv.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${scenario.name}</p>
+                            <p class="text-xs text-gray-500">${scenario.timestamp} | 예측 요율: <span class="font-bold text-blue-600">${scenario.predictedRate.toFixed(4)}%</span></p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="load-scenario-btn bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-sm transition duration-200" data-index="${index}">
+                                <i class="fas fa-folder-open"></i> 불러오기
+                            </button>
+                            <button class="delete-scenario-btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm transition duration-200" data-index="${index}">
+                                <i class="fas fa-trash"></i> 삭제
+                            </button>
+                        </div>
+                    `;
+                    savedScenariosDiv.appendChild(scenarioDiv);
+                });
+
+                document.querySelectorAll('.load-scenario-btn').forEach(button => {
+                    button.addEventListener('click', (e) => loadScenario(parseInt(e.currentTarget.dataset.index)));
+                });
+
+                document.querySelectorAll('.delete-scenario-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        // Use a custom message box instead of confirm()
+                        const messageBox = createConfirmBox("이 시나리오를 삭제하시겠습니까?", () => {
+                            deleteScenario(parseInt(e.currentTarget.dataset.index));
+                        });
+                        document.body.appendChild(messageBox);
+                    });
+                });
+            };
+
+            saveScenarioBtn.addEventListener('click', saveScenario);
+
+            // Custom Message Box Function
+            function createMessageBox(message, type = "info") {
+                const colors = {
+                    info: { bg: 'bg-blue-500', icon: 'fas fa-info-circle' },
+                    success: { bg: 'bg-green-500', icon: 'fas fa-check-circle' },
+                    warning: { bg: 'bg-yellow-500', icon: 'fas fa-exclamation-triangle' },
+                    error: { bg: 'bg-red-500', icon: 'fas fa-times-circle' }
+                };
+                const color = colors[type] || colors.info;
+
+                const messageBox = document.createElement('div');
+                messageBox.className = `fixed bottom-5 right-5 z-[100] p-4 pr-6 rounded-lg shadow-xl text-white flex items-center gap-3 ${color.bg} transition-transform duration-300 ease-out transform translate-y-full opacity-0`;
+                messageBox.innerHTML = `
+                    <i class="${color.icon} text-xl"></i>
+                    <p class="text-sm font-medium">${message}</p>
+                    <button class="absolute top-1 right-2 text-white opacity-70 hover:opacity-100" onclick="this.closest('.fixed').remove()">&times;</button>
+                `;
+                document.body.appendChild(messageBox);
+
+                // Animate in
+                setTimeout(() => {
+                    messageBox.classList.remove('translate-y-full', 'opacity-0');
+                    messageBox.classList.add('translate-y-0', 'opacity-100');
+                }, 10); // Small delay to allow CSS transition
+
+                // Animate out after 3 seconds
+                setTimeout(() => {
+                    messageBox.classList.remove('translate-y-0', 'opacity-100');
+                    messageBox.classList.add('translate-y-full', 'opacity-0');
+                    messageBox.addEventListener('transitionend', () => messageBox.remove());
+                }, 3000);
+
+                return messageBox;
+            }
+
+            // Custom Confirm Box Function
+            function createConfirmBox(message, onConfirm) {
+                const confirmBox = document.createElement('div');
+                confirmBox.className = `fixed inset-0 bg-black bg-opacity-50 z-[100] flex items-center justify-center`;
+                confirmBox.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full">
+                        <p class="text-lg font-semibold text-gray-800 mb-4">${message}</p>
+                        <div class="flex justify-end gap-3">
+                            <button class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition duration-200 cancel-btn">취소</button>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition duration-200 confirm-btn">확인</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(confirmBox);
+
+                confirmBox.querySelector('.cancel-btn').addEventListener('click', () => confirmBox.remove());
+                confirmBox.querySelector('.confirm-btn').addEventListener('click', () => {
+                    onConfirm();
+                    confirmBox.remove();
+                });
+
+                return confirmBox;
+            }
+
+            // Initial setup
+            updateStepUI();
+            updateTotalExpectedSelections();
+            loadScenarios();
+        });
+    </script>
 </body>
 </html>
