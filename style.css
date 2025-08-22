@@ -1,0 +1,358 @@
+/* Custom CSS for 예정임대요율 예측 계산기 */
+
+/* Font settings */
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* Step circles animation */
+.step-circle {
+    transition: all 0.3s ease;
+}
+
+.step-circle.active {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Rate input groups */
+.rate-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.rate-input-group:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.rate-input-group.filled {
+    background: #eff6ff;
+    border-color: #3b82f6;
+}
+
+.rate-input-group label {
+    font-weight: 600;
+    color: #4b5563;
+    min-width: 2.5rem;
+}
+
+.rate-input-group input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.rate-input-group input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Frequency input styling */
+.frequency-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+}
+
+.frequency-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Table styling */
+table {
+    font-size: 0.95rem;
+}
+
+table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+
+table td {
+    color: #4b5563;
+}
+
+table tbody tr:hover {
+    background: #f9fafb;
+}
+
+/* Button animations */
+button {
+    position: relative;
+    overflow: hidden;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+button:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Modal animation */
+#helpModal {
+    animation: fadeIn 0.3s ease;
+}
+
+#helpModal > div > div {
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Scenario card styling */
+.scenario-card {
+    padding: 1rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.scenario-card:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Chart container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rate-input-group {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rate-input-group label {
+        text-align: center;
+        margin-bottom: 0.25rem;
+    }
+    
+    table {
+        font-size: 0.875rem;
+    }
+    
+    #helpModal > div > div {
+        margin: 1rem;
+        max-height: calc(100vh - 2rem);
+    }
+}
+
+/* Print styles */
+@media print {
+    header,
+    #helpBtn,
+    button,
+    .bg-yellow-50 {
+        display: none;
+    }
+    
+    .step-content {
+        page-break-inside: avoid;
+    }
+    
+    body {
+        background: white;
+    }
+    
+    .shadow-lg {
+        box-shadow: none;
+        border: 1px solid #e5e7eb;
+    }
+}
+
+/* Tooltip styling */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #1f2937;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.875rem;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1f2937 transparent transparent transparent;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Success animation */
+.success-animation {
+    animation: successPulse 0.5s ease;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+        background-color: #10b981;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Error shake animation */
+.error-shake {
+    animation: shake 0.5s ease;
+    border-color: #ef4444 !important;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+/* Smooth scroll behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Calculation detail styling */
+.calculation-step {
+    padding: 1rem;
+    background: linear-gradient(135deg, #f3f4f6 0%, #ffffff 100%);
+    border-left: 4px solid #3b82f6;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.calculation-step h4 {
+    color: #1f2937;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.calculation-step p {
+    color: #4b5563;
+    font-size: 0.95rem;
+}
+
+.calculation-step code {
+    background: #fef3c7;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-family: 'Courier New', monospace;
+    color: #92400e;
+}
