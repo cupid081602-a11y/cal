@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -294,7 +293,6 @@
     </div>
 
     <script>
-        // main.js content
         document.addEventListener('DOMContentLoaded', () => {
             const numRates = 15;
             const rateInputsContainer = document.getElementById('rate-inputs-container');
@@ -373,15 +371,31 @@
                 rateInputs.push(document.getElementById(`rate${i + 1}`));
             }
 
-            // Sample data load
+            // Function to generate random rates within 1-10% with constraints
+            const generateRandomRates = () => {
+                const newRates = [];
+                // First rate is a random value between 1.0000 and 8.5000
+                let currentRate = Math.random() * (8.5000 - 1.0000) + 1.0000;
+                newRates.push(currentRate);
+
+                for (let i = 1; i < numRates; i++) {
+                    const minNextRate = currentRate; // Next rate must be >= current rate
+                    const maxNextRate = Math.min(currentRate + 0.15, 10.0000); // Max interval 0.15% and overall max 10%
+                    
+                    // Generate a random number between minNextRate and maxNextRate
+                    // Ensure maxNextRate is not less than minNextRate if currentRate is already high
+                    const randomRate = Math.random() * (Math.max(maxNextRate, minNextRate) - minNextRate) + minNextRate;
+                    currentRate = randomRate;
+                    newRates.push(currentRate);
+                }
+                return newRates;
+            };
+
+            // Sample data load - now generates random data
             document.getElementById('loadSampleData').addEventListener('click', () => {
-                const sampleRates = [
-                    85.1234, 86.5678, 87.9012, 88.3456, 89.7890,
-                    90.1234, 91.5678, 92.9012, 93.3456, 94.7890,
-                    95.1234, 96.5678, 97.9012, 98.3456, 99.7890
-                ];
+                const randomRates = generateRandomRates();
                 rateInputs.forEach((input, index) => {
-                    input.value = sampleRates[index] ? sampleRates[index].toFixed(4) : '';
+                    input.value = randomRates[index].toFixed(4);
                 });
             });
 
@@ -391,43 +405,54 @@
                 const selections = parseInt(selectionsPerBidderInput.value) || 0;
                 const total = bidders * selections;
                 totalExpectedSelectionsDiv.textContent = `${total}회`;
+                updateFrequencyTable(); // Recalculate percentages when total selections change
             };
 
             expectedBiddersInput.addEventListener('input', updateTotalExpectedSelections);
             selectionsPerBidderInput.addEventListener('input', updateTotalExpectedSelections);
 
-            // Populate frequency table and calculate totals
-            const updateFrequencyTable = () => {
+            // Function to generate frequency input fields (called once)
+            const generateFrequencyInputs = () => {
+                frequencyTableBody.innerHTML = ''; // Clear existing
                 const rates = rateInputs.map(input => parseFloat(input.value)).filter(rate => !isNaN(rate));
-                frequencyTableBody.innerHTML = '';
-                let totalFrequency = 0;
-                let totalPercentage = 0;
-
-                const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
 
                 rates.forEach((rate, index) => {
                     const tr = document.createElement('tr');
                     const frequencyInputId = `freq${index + 1}`;
-                    const frequency = parseInt(document.getElementById(frequencyInputId)?.value || '0');
-                    const percentage = expectedTotalSelections > 0 ? (frequency / expectedTotalSelections * 100).toFixed(2) : 0;
-
                     tr.innerHTML = `
                         <td class="border border-gray-300 px-4 py-2">${index + 1}</td>
                         <td class="border border-gray-300 px-4 py-2">${rate.toFixed(4)}</td>
                         <td class="border border-gray-300 px-4 py-2">
-                            <input type="number" id="${frequencyInputId}" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" value="${frequency}" min="0">
+                            <input type="number" id="${frequencyInputId}" class="w-full px-2 py-1 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" value="0" min="0">
                         </td>
-                        <td class="border border-gray-300 px-4 py-2 text-gray-700 percentage-cell">${percentage}%</td>
+                        <td class="border border-gray-300 px-4 py-2 text-gray-700 percentage-cell">0.00%</td>
                     `;
                     frequencyTableBody.appendChild(tr);
 
-                    totalFrequency += frequency;
-                    // For total percentage, sum actual percentages to avoid floating point issues from (totalFreq / totalExpected)
-                    totalPercentage += parseFloat(percentage);
+                    // Add event listener to each newly created frequency input
+                    document.getElementById(frequencyInputId).addEventListener('input', updateFrequencyTable);
                 });
+            };
 
-                document.querySelectorAll('#frequencyTableBody input[type="number"]').forEach(input => {
-                    input.addEventListener('input', updateFrequencyTable);
+            // Update frequency table (reads existing values, updates percentages and totals)
+            const updateFrequencyTable = () => {
+                const freqInputs = document.querySelectorAll('#frequencyTableBody input[type="number"]');
+                const rateValues = rateInputs.map(input => parseFloat(input.value) || 0); // Get latest rate values
+                let totalFrequency = 0;
+                const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
+
+                freqInputs.forEach((input, index) => {
+                    const frequency = parseInt(input.value) || 0;
+                    totalFrequency += frequency;
+
+                    // Update rate display in table if it changed
+                    const rateCell = input.closest('tr').children[1];
+                    rateCell.textContent = rateValues[index].toFixed(4);
+
+                    // Update percentage
+                    const percentageCell = input.closest('tr').children[3];
+                    const percentage = expectedTotalSelections > 0 ? (frequency / expectedTotalSelections * 100) : 0;
+                    percentageCell.textContent = `${percentage.toFixed(2)}%`;
                 });
 
                 totalFrequencyCell.textContent = `${totalFrequency}회`;
@@ -438,40 +463,27 @@
                 }
             };
 
-            // Auto distribute frequencies (bell curve-like)
+            // Auto distribute frequencies (evenly across all rates)
             document.getElementById('autoDistribute').addEventListener('click', () => {
                 const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
                 if (expectedTotalSelections === 0 || isNaN(expectedTotalSelections)) {
-                    // Display a temporary message to the user that total expected selections cannot be 0
                     const messageBox = createMessageBox("예상 총 선택 횟수를 먼저 입력해주세요.", "warning");
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 3000);
                     return;
                 }
 
-                // Simple bell curve distribution approximation
                 const frequencies = Array(numRates).fill(0);
-                const center = Math.floor(numRates / 2);
-
+                // Distribute selections as evenly as possible
                 for (let i = 0; i < expectedTotalSelections; i++) {
-                    // Randomly pick a rate, biasing towards the center
-                    let index = Math.floor(Math.random() * numRates);
-                    // A simple bias: if random is too far, try again closer to center
-                    if (Math.abs(index - center) > numRates / 4) {
-                        index = Math.floor(Math.random() * numRates / 2) + Math.floor(numRates / 4);
-                    }
-                    if (index < 0) index = 0;
-                    if (index >= numRates) index = numRates - 1;
+                    const index = Math.floor(Math.random() * numRates); // Randomly pick any of the 15 rates
                     frequencies[index]++;
                 }
 
-                rateInputs.forEach((_, index) => {
-                    const freqInput = document.getElementById(`freq${index + 1}`);
-                    if (freqInput) {
-                        freqInput.value = frequencies[index];
-                    }
+                document.querySelectorAll('#frequencyTableBody input[type="number"]').forEach((freqInput, index) => {
+                    freqInput.value = frequencies[index];
                 });
-                updateFrequencyTable();
+                updateFrequencyTable(); // Update display with new frequencies
             });
 
             // Combinations function for the new section (13C3)
@@ -507,6 +519,8 @@
                     return;
                 }
                 goToStep(1);
+                // Generate frequency inputs only once when entering Step 2
+                generateFrequencyInputs(); 
                 updateFrequencyTable(); // Initialize frequency table after rates are entered
             });
 
@@ -531,7 +545,8 @@
                     const messageBox = createMessageBox(`총 예상 선택 횟수(${expectedTotalSelections}회)와 입력된 선택 횟수(${totalFreq}회)가 일치하지 않습니다.`, "warning");
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 5000);
-                    return;
+                    // It's a warning, allow user to proceed if they wish, or force correction based on business logic.
+                    // For now, let's proceed but alert. If strict, add `return;` here.
                 }
 
                 // Perform prediction
@@ -710,25 +725,31 @@
                 const allRates = Array.from(document.querySelectorAll('#rate-inputs-container input'))
                     .map(input => parseFloat(input.value))
                     .filter(rate => !isNaN(rate))
-                    .sort((a, b) => b - a); // Sort descending to easily get top 13
+                    .sort((a, b) => a - b); // Sort ascending for combinations display
 
                 // Take the top 13 rates for combinations (if available)
                 const ratesForCombinations = allRates.slice(0, 13);
                 
                 const all3Combinations = combinations(ratesForCombinations, 3);
 
+                const combinationsWithAverages = all3Combinations.map(combo => {
+                    const sum = combo.reduce((acc, curr) => acc + curr, 0);
+                    const avg = sum / combo.length;
+                    return { combo, avg };
+                });
+
+                // Sort combinations by their average rate in ascending order
+                combinationsWithAverages.sort((a, b) => a.avg - b.avg);
+
                 const combinationsOutput = document.getElementById('combinationsOutput');
                 combinationsOutput.innerHTML = ''; // Clear previous content
 
-                all3Combinations.forEach((combo, index) => {
-                    const sum = combo.reduce((acc, curr) => acc + curr, 0);
-                    const avg = sum / combo.length;
-                    const formattedAvg = avg.toFixed(4); // Round to 4 decimal places
-
+                combinationsWithAverages.forEach((item, index) => {
+                    const formattedAvg = item.avg.toFixed(4);
                     const comboDiv = document.createElement('div');
                     comboDiv.className = 'flex justify-between items-center text-sm p-2 rounded-md bg-gray-50 hover:bg-gray-100';
                     comboDiv.innerHTML = `
-                        <span class="font-medium text-gray-700">${index + 1}. [${combo.map(r => r.toFixed(4)).join(', ')}]</span>
+                        <span class="font-medium text-gray-700">${index + 1}. [${item.combo.map(r => r.toFixed(4)).join(', ')}]</span>
                         <span class="font-bold text-blue-700">${formattedAvg}%</span>
                     `;
                     combinationsOutput.appendChild(comboDiv);
@@ -750,7 +771,13 @@
                 expectedBiddersInput.value = '100';
                 selectionsPerBidderInput.value = '2';
                 totalExpectedSelectionsDiv.textContent = '200회';
-                frequencyTableBody.innerHTML = '';
+                
+                // Clear frequency inputs specifically by setting their values to 0
+                document.querySelectorAll('#frequencyTableBody input[type="number"]').forEach(input => {
+                    input.value = '0';
+                });
+                updateFrequencyTable(); // Update table display after clearing inputs
+
                 totalFrequencyCell.textContent = '0회';
                 totalPercentageCell.textContent = '';
                 finalPredictedRateDisplay.textContent = '-';
@@ -836,8 +863,9 @@
                     selectionsPerBidderInput.value = scenario.selectionsPerBidder;
                     updateTotalExpectedSelections(); // Update calculated total selections
 
-                    // Populate frequency inputs
-                    updateFrequencyTable(); // First, generate empty frequency inputs
+                    // Ensure frequency inputs are generated before populating
+                    generateFrequencyInputs(); // This will recreate with default 0s, then we populate
+
                     scenario.frequencies.forEach((freq, i) => {
                         const freqInput = document.getElementById(`freq${i + 1}`);
                         if (freqInput) freqInput.value = freq;
