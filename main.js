@@ -1,4 +1,4 @@
-// 예정임대요율 예측 계산기 - Main JavaScript
+// 예정임대요율 예측 계산기 - Main JavaScript (기능 업데이트 버전)
 
 // 전역 변수
 let currentStep = 1;
@@ -23,9 +23,9 @@ function initializeApp() {
 // 요율 입력 필드 동적 생성
 function createRateInputFields() {
     const container = document.getElementById('rate-inputs-container');
-    if (!container) return; // 컨테이너가 없으면 함수 종료
+    if (!container) return;
 
-    container.innerHTML = ''; // 기존 내용을 비웁니다.
+    container.innerHTML = '';
     for (let i = 0; i < 15; i++) {
         const num = i + 1;
         const group = document.createElement('div');
@@ -70,21 +70,15 @@ function setupEventListeners() {
     document.getElementById('helpBtn').addEventListener('click', showHelpModal);
     document.getElementById('closeHelp').addEventListener('click', hideHelpModal);
     
-    // 요율 입력 필드 이벤트 (이벤트 위임 사용)
     const container = document.getElementById('rate-inputs-container');
     container.addEventListener('input', function(e) {
         if (e.target && e.target.classList.contains('rate-input')) {
             const input = e.target;
             const index = parseInt(input.dataset.index);
-            
-            // 소수점 5자리에서 자르기 (입력 제한)
             if (input.value.includes('.')) {
                 input.value = input.value.slice(0, input.value.indexOf('.') + 5);
             }
-            
             ratesData[index] = parseFloat(input.value) || null;
-            
-            // 입력된 필드 스타일 변경
             const group = input.closest('.rate-input-group');
             if (input.value) {
                 group.classList.add('filled');
@@ -94,36 +88,42 @@ function setupEventListeners() {
         }
     });
     
-    // 모달 외부 클릭 시 닫기
     document.getElementById('helpModal').addEventListener('click', function(e) {
-        if (e.target.id === 'helpModal') {
-            hideHelpModal();
-        }
+        if (e.target.id === 'helpModal') hideHelpModal();
     });
 }
 
-// 샘플 데이터 로드
+// ✅ [수정] 랜덤 예시 데이터 로드
 function loadSampleData() {
-    const sampleRates = [
-        8.1234, 8.2345, 8.3456, 8.4567, 8.5678,
-        8.6789, 8.7890, 8.8901, 8.9012, 9.0123,
-        9.1234, 9.2345, 9.3456, 9.4567, 9.5678
-    ];
-    
-    sampleRates.forEach((rate, index) => {
+    let tempRates = [];
+    // 7.0% ~ 9.0% 사이의 랜덤 시작 값 생성
+    let currentRate = 7 + Math.random() * 2;
+
+    for (let i = 0; i < 15; i++) {
+        tempRates.push(parseFloat(currentRate.toFixed(4)));
+        // 0% ~ 0.15% 사이의 랜덤 간격 추가
+        currentRate += Math.random() * 0.15;
+    }
+
+    // 생성된 순차적 요율을 무작위로 섞음
+    tempRates.sort(() => Math.random() - 0.5);
+
+    ratesData = tempRates;
+
+    ratesData.forEach((rate, index) => {
         const input = document.getElementById(`rate${index + 1}`);
         if (input) {
             input.value = rate;
-            ratesData[index] = rate;
             input.closest('.rate-input-group').classList.add('filled');
         }
     });
-    
+
     document.querySelectorAll('.rate-input-group').forEach(group => {
         group.classList.add('success-animation');
         setTimeout(() => group.classList.remove('success-animation'), 500);
     });
 }
+
 
 // Step 1 -> Step 2
 function goToStep2() {
@@ -131,7 +131,6 @@ function goToStep2() {
     
     if (filledCount < 15) {
         alert(`모든 복수예비임대요율을 입력해주세요.\n현재 ${filledCount}/15개 입력됨`);
-        
         document.querySelectorAll('.rate-input').forEach((input) => {
             if (!input.value) {
                 input.closest('.rate-input-group').classList.add('error-shake');
@@ -222,33 +221,25 @@ function updateTotalExpected() {
     }
 }
 
-// 자동 분배
+// ✅ [수정] 랜덤 빈도 자동 분배
 function autoDistributeFrequency() {
     const total = parseInt(document.getElementById('totalExpectedSelections').textContent) || 200;
     
-    const mean = 7; 
-    const stdDev = 3;
-    let distributedTotal = 0;
-    const distribution = [];
+    // 15개 슬롯을 0으로 초기화
+    let frequencies = new Array(15).fill(0);
     
-    for (let i = 0; i < 15; i++) {
-        const probability = Math.exp(-0.5 * Math.pow((i - mean) / stdDev, 2));
-        distribution.push(probability);
+    // 총 선택 횟수만큼 반복하면서 랜덤한 슬롯의 값을 1씩 증가
+    for (let i = 0; i < total; i++) {
+        const randomIndex = Math.floor(Math.random() * 15);
+        frequencies[randomIndex]++;
     }
-    
-    const sum = distribution.reduce((a, b) => a + b, 0);
-    
-    for (let i = 0; i < 14; i++) {
-        const value = Math.round((distribution[i] / sum) * total);
-        frequencyData[i] = value;
-        distributedTotal += value;
-    }
-    frequencyData[14] = total - distributedTotal; // 마지막 값에 오차 보정
+
+    frequencyData = frequencies;
 
     frequencyData.forEach((value, index) => {
-         const input = document.getElementById(`freq${index + 1}`);
+        const input = document.getElementById(`freq${index + 1}`);
         if (input) input.value = value;
-    })
+    });
     
     updateFrequencyCalculations();
 }
@@ -265,17 +256,93 @@ function goToStep3() {
     performCalculation();
     displayResults();
     createCharts();
+    displayAllCombinations(); // ✅ [추가] 모든 경우의 수 표시 함수 호출
     showStep(3);
 }
 
+
+// ✅ [추가] 모든 경우의 수(13C3) 표 생성
+function displayAllCombinations() {
+    const container = document.getElementById('combinationsContainer');
+    container.innerHTML = '<div class="p-4 text-center text-gray-500">경우의 수 계산 중...</div>';
+
+    // 비동기 처리를 통해 UI가 멈추는 것을 방지
+    setTimeout(() => {
+        if (!ratesData || ratesData.filter(r => r !== null).length < 15) {
+            container.innerHTML = '<div class="p-4 text-center text-red-500">요율 15개가 모두 입력되지 않았습니다.</div>';
+            return;
+        }
+
+        const sortedRates = [...ratesData].sort((a, b) => a - b);
+        const top13Rates = sortedRates.slice(2);
+
+        // 조합 생성 함수
+        function getCombinations(arr, k) {
+            const result = [];
+            function combine(startIndex, currentCombo) {
+                if (currentCombo.length === k) {
+                    result.push([...currentCombo]);
+                    return;
+                }
+                if (startIndex >= arr.length) return;
+                
+                // 현재 원소를 포함
+                currentCombo.push(arr[startIndex]);
+                combine(startIndex + 1, currentCombo);
+                
+                // 현재 원소를 미포함
+                currentCombo.pop();
+                combine(startIndex + 1, currentCombo);
+            }
+            combine(0, []);
+            return result;
+        }
+
+        const combinations = getCombinations(top13Rates, 3);
+        
+        const results = combinations.map(combo => {
+            const sum = combo.reduce((a, b) => a + b, 0);
+            const avg = sum / 3;
+            const finalRate = Math.ceil(avg * 10000) / 10000;
+            return { combo, finalRate };
+        });
+
+        // 결과를 finalRate 기준으로 오름차순 정렬
+        results.sort((a, b) => a.finalRate - b.finalRate);
+
+        let tableHTML = `
+            <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50 sticky top-0">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">조합 요율 1</th>
+                        <th scope="col" class="px-6 py-3">조합 요율 2</th>
+                        <th scope="col" class="px-6 py-3">조합 요율 3</th>
+                        <th scope="col" class="px-6 py-3 font-bold text-blue-600">예상 낙찰요율</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        results.forEach(res => {
+            tableHTML += `
+                <tr class="bg-white border-b hover:bg-blue-50">
+                    <td class="px-6 py-2">${res.combo[0].toFixed(4)}%</td>
+                    <td class="px-6 py-2">${res.combo[1].toFixed(4)}%</td>
+                    <td class="px-6 py-2">${res.combo[2].toFixed(4)}%</td>
+                    <td class="px-6 py-2 font-semibold text-gray-900">${res.finalRate.toFixed(4)}%</td>
+                </tr>
+            `;
+        });
+
+        tableHTML += '</tbody></table>';
+        container.innerHTML = tableHTML;
+    }, 100); // 0.1초 후 계산 시작
+}
+
+
 // 예정임대요율 계산
 function performCalculation() {
-    const dataWithFreq = ratesData.map((rate, index) => ({
-        number: index + 1,
-        rate: rate,
-        frequency: frequencyData[index]
-    }));
-
+    const dataWithFreq = ratesData.map((rate, index) => ({ number: index + 1, rate: rate, frequency: frequencyData[index] }));
     const sortedData = dataWithFreq.sort((a, b) => {
         if (b.frequency !== a.frequency) return b.frequency - a.frequency;
         return a.number - b.number;
@@ -321,22 +388,16 @@ function createCharts() {
     if (frequencyChart) frequencyChart.destroy();
     if (rateVsFrequencyChart) rateVsFrequencyChart.destroy();
     
-    const chartOptions = {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } }
-    };
+    const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
 
     const ctx1 = document.getElementById('frequencyChart').getContext('2d');
     frequencyChart = new Chart(ctx1, {
-        type: 'bar',
-        data: {
+        type: 'bar', data: {
             labels: Array.from({length: 15}, (_, i) => `${i + 1}번`),
-            datasets: [{
-                label: '선택 횟수', data: frequencyData,
+            datasets: [{ label: '선택 횟수', data: frequencyData,
                 backgroundColor: Array.from({length: 15}, (_, i) => calculationResult.top5.some(item => item.number === i + 1) ? 'rgba(59, 130, 246, 0.8)' : 'rgba(156, 163, 175, 0.6)'),
                 borderColor: Array.from({length: 15}, (_, i) => calculationResult.top5.some(item => item.number === i + 1) ? 'rgba(59, 130, 246, 1)' : 'rgba(156, 163, 175, 1)'),
-                borderWidth: 1
-            }]
+                borderWidth: 1 }]
         },
         options: { ...chartOptions, scales: { y: { beginAtZero: true, title: { display: true, text: '선택 횟수' } } } }
     });
@@ -344,13 +405,10 @@ function createCharts() {
     const ctx2 = document.getElementById('rateVsFrequencyChart').getContext('2d');
     const scatterData = ratesData.map((rate, index) => ({ x: rate, y: frequencyData[index], number: index + 1 }));
     rateVsFrequencyChart = new Chart(ctx2, {
-        type: 'scatter',
-        data: {
-            datasets: [{
-                label: '요율 vs 선택 횟수', data: scatterData,
+        type: 'scatter', data: {
+            datasets: [{ label: '요율 vs 선택 횟수', data: scatterData,
                 backgroundColor: scatterData.map(d => calculationResult.selectedRates.some(item => item.number === d.number) ? 'rgba(16, 185, 129, 1)' : 'rgba(59, 130, 246, 0.8)'),
-                pointRadius: 6, pointHoverRadius: 8
-            }]
+                pointRadius: 6, pointHoverRadius: 8 }]
         },
         options: { ...chartOptions,
             plugins: { ...chartOptions.plugins, tooltip: { callbacks: { label: (c) => ` ${c.raw.number}번: ${c.raw.x.toFixed(4)}%, ${c.raw.y}회` } } },
@@ -363,14 +421,11 @@ function createCharts() {
 function saveCurrentScenario() {
     const name = document.getElementById('scenarioName').value.trim();
     if (!name) { alert('시나리오 이름을 입력해주세요.'); return; }
-    
     const scenario = { id: Date.now(), name, date: new Date().toLocaleString('ko-KR'), rates: [...ratesData], frequencies: [...frequencyData], result: calculationResult.finalRate, expectedBidders: document.getElementById('expectedBidders').value, selectionsPerBidder: document.getElementById('selectionsPerBidder').value };
-    
     savedScenarios.unshift(scenario);
     localStorage.setItem('savedScenarios', JSON.stringify(savedScenarios));
     displaySavedScenarios();
     document.getElementById('scenarioName').value = '';
-
     const button = document.getElementById('saveScenario');
     button.innerHTML = '<i class="fas fa-check mr-2"></i>저장 완료!';
     button.classList.add('bg-green-600', 'success-animation');
@@ -384,15 +439,11 @@ function saveCurrentScenario() {
 function displaySavedScenarios() {
     const container = document.getElementById('savedScenarios');
     if (savedScenarios.length === 0) {
-        container.innerHTML = '<p class="text-gray-500 text-center py-4">저장된 시나리오가 없습니다.</p>';
-        return;
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">저장된 시나리오가 없습니다.</p>'; return;
     }
     container.innerHTML = savedScenarios.map(s => `
         <div class="scenario-card flex justify-between items-center">
-            <div>
-                <h4 class="font-bold text-gray-800">${s.name}</h4>
-                <p class="text-sm text-gray-600">${s.date} | 예측결과: ${s.result.toFixed(4)}%</p>
-            </div>
+            <div><h4 class="font-bold text-gray-800">${s.name}</h4><p class="text-sm text-gray-600">${s.date} | 예측결과: ${s.result.toFixed(4)}%</p></div>
             <div class="flex gap-2">
                 <button onclick="loadScenario(${s.id})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-all"><i class="fas fa-upload mr-1"></i>불러오기</button>
                 <button onclick="deleteScenario(${s.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm transition-all"><i class="fas fa-trash mr-1"></i>삭제</button>
@@ -404,19 +455,16 @@ function displaySavedScenarios() {
 function loadScenario(id) {
     const scenario = savedScenarios.find(s => s.id === id);
     if (!scenario) return;
-    
     ratesData = [...scenario.rates];
     frequencyData = [...scenario.frequencies];
-    
-    createRateInputFields(); // 입력 필드를 다시 그리고
-    ratesData.forEach((rate, index) => { // 값을 채웁니다.
+    createRateInputFields();
+    ratesData.forEach((rate, index) => {
         const input = document.getElementById(`rate${index + 1}`);
         if (input && rate !== null) {
             input.value = rate;
             input.closest('.rate-input-group').classList.add('filled');
         }
     });
-    
     document.getElementById('expectedBidders').value = scenario.expectedBidders;
     document.getElementById('selectionsPerBidder').value = scenario.selectionsPerBidder;
     updateTotalExpected();
@@ -455,13 +503,11 @@ function updateProgress(step) {
     for (let i = 1; i <= 3; i++) {
         const circle = document.getElementById(`step${i}Circle`);
         const text = circle.nextElementSibling;
-        
         circle.classList.toggle('active', i === step);
         circle.classList.toggle('bg-blue-600', i <= step);
         circle.classList.toggle('text-white', i <= step);
         circle.classList.toggle('bg-gray-300', i > step);
         circle.classList.toggle('text-gray-600', i > step);
-
         if(text) {
             text.classList.toggle('text-gray-800', i <= step);
             text.classList.toggle('text-gray-600', i > step);
@@ -480,8 +526,7 @@ function startNewCalculation() {
     ratesData.fill(null);
     frequencyData.fill(0);
     calculationResult = null;
-    
-    createRateInputFields(); // 입력 필드 초기화
+    createRateInputFields();
     document.getElementById('expectedBidders').value = 100;
     document.getElementById('selectionsPerBidder').value = 2;
     updateTotalExpected();
