@@ -366,7 +366,7 @@
                 div.innerHTML = `
                     <label for="rate${i + 1}" class="w-12 text-center text-sm font-medium text-gray-700 mr-2">${i + 1}.</label>
                     <input type="number" id="rate${i + 1}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" step="0.0001">
-                `; // Removed placeholder text
+                `; 
                 rateInputsContainer.appendChild(div);
                 rateInputs.push(document.getElementById(`rate${i + 1}`));
             }
@@ -466,7 +466,7 @@
             // Auto distribute frequencies (bell curve-like)
             document.getElementById('autoDistribute').addEventListener('click', () => {
                 const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
-                if (isNaN(expectedTotalSelections) || expectedTotalSelections === 0) { // Check for NaN or zero
+                if (isNaN(expectedTotalSelections) || expectedTotalSelections === 0) { 
                     const messageBox = createMessageBox("예상 총 선택 횟수를 먼저 입력해주세요.", "warning");
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 3000);
@@ -533,7 +533,7 @@
                 // Validate rates
                 const hasEmptyRate = rateInputs.some(input => input.value.trim() === '');
                 if (hasEmptyRate) {
-                    const messageBox = createMessageBox("모든 15개의 복수예비임대요율을 입력해주세요.", "error"); // Re-added warning
+                    const messageBox = createMessageBox("모든 15개의 복수예비임대요율을 입력해주세요.", "error"); 
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 3000);
                     return; 
@@ -565,8 +565,6 @@
                     const messageBox = createMessageBox(`총 예상 선택 횟수(${expectedTotalSelections}회)와 입력된 선택 횟수(${totalFreq}회)가 일치하지 않습니다.`, "warning");
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 5000);
-                    // It's a warning, allow user to proceed if they wish, or force correction based on business logic.
-                    // For now, let's proceed but alert. If strict, add `return;` here.
                 }
 
                 // Perform prediction
@@ -589,15 +587,21 @@
                 const highest3OfTop5 = sortedTop5ByRate.slice(0, 3);
 
                 // 5. Calculate their arithmetic mean
-                let predictedRate = 0;
+                let predictedRateRaw = 0; // Raw value before rounding
+                let predictedRate = 0;     // Rounded value
                 let calculationSteps = [];
 
                 if (highest3OfTop5.length > 0) {
                     const sumOfHighest3 = highest3OfTop5.reduce((sum, item) => sum + item.rate, 0);
-                    predictedRate = sumOfHighest3 / highest3OfTop5.length;
+                    predictedRateRaw = sumOfHighest3 / highest3OfTop5.length; // Calculate raw average
 
-                    // Round up to the 4th decimal place
-                    predictedRate = Math.ceil(predictedRate * 10000) / 10000;
+                    // 사용자 요청: 소수점 넷째 자리까지 버린 후 무조건 0.0001 더하기
+                    // 이 로직은 소수점 넷째 자리에서 직상위 올림과 동일하게 작동합니다.
+                    const valueForTruncation = predictedRateRaw * 10000;
+                    const truncatedInteger = Math.floor(valueForTruncation);
+                    const truncatedPredictedRate = truncatedInteger / 10000;
+                    predictedRate = truncatedPredictedRate + 0.0001;
+
 
                     // Generate calculation details
                     calculationSteps.push({
@@ -614,11 +618,13 @@
                     });
                     calculationSteps.push({
                         step: "4. 산술평균 계산",
-                        detail: `${sumOfHighest3.toFixed(4)} / 3 = ${(sumOfHighest3 / highest3OfTop5.length).toFixed(4)}`
+                        // 요청에 따라 소수점 넷째 자리까지만 표기
+                        detail: `${sumOfHighest3.toFixed(4)} / 3 = ${predictedRateRaw.toFixed(4)}` 
                     });
                     calculationSteps.push({
-                        step: "5. 소수점 넷째 자리에서 올림",
-                        detail: `${(sumOfHighest3 / highest3OfTop5.length).toFixed(4)} &rarr; ${predictedRate.toFixed(4)}`
+                        step: "5. 소수점 넷째 자리에서 올림(직상위)", // 명확하게 '직상위'임을 명시
+                        // 원본 평균의 넷째 자리까지 버린 후 0.0001을 더한 결과
+                        detail: `${truncatedPredictedRate.toFixed(4)} &rarr; ${predictedRate.toFixed(4)}` 
                     });
 
                 } else {
@@ -902,20 +908,33 @@
             };
 
             const deleteScenario = (index) => {
+                console.log('DEBUG: deleteScenario 함수 호출됨. 삭제 인덱스:', index);
                 let scenarios = JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]');
-                const deletedName = scenarios[index]?.name;
-                scenarios.splice(index, 1);
-                localStorage.setItem('bidCalculatorScenarios', JSON.stringify(scenarios));
-                loadScenarios();
+                console.log('DEBUG: 삭제 전 시나리오 목록:', scenarios);
 
-                const messageBox = createMessageBox(`'${deletedName}' 시나리오가 삭제되었습니다.`, "info");
-                document.body.appendChild(messageBox);
-                setTimeout(() => messageBox.remove(), 3000);
+                if (index >= 0 && index < scenarios.length) {
+                    const deletedName = scenarios[index].name;
+                    scenarios.splice(index, 1);
+                    localStorage.setItem('bidCalculatorScenarios', JSON.stringify(scenarios));
+                    console.log('DEBUG: 삭제 후 로컬 스토리지에 저장된 시나리오 목록:', JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]'));
+                    
+                    loadScenarios(); // 시나리오 목록 새로고침
+
+                    const messageBox = createMessageBox(`'${deletedName}' 시나리오가 삭제되었습니다.`, "info");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                } else {
+                    console.error('DEBUG: 유효하지 않은 삭제 인덱스:', index);
+                    const messageBox = createMessageBox("삭제할 시나리오를 찾을 수 없습니다.", "error");
+                    document.body.appendChild(messageBox);
+                    setTimeout(() => messageBox.remove(), 3000);
+                }
             };
 
             const loadScenarios = () => {
                 const scenarios = JSON.parse(localStorage.getItem('bidCalculatorScenarios') || '[]');
-                savedScenariosDiv.innerHTML = '';
+                savedScenariosDiv.innerHTML = ''; // 기존 목록 초기화
+                
                 if (scenarios.length === 0) {
                     savedScenariosDiv.innerHTML = '<p class="text-gray-500 italic">저장된 시나리오가 없습니다.</p>';
                     return;
@@ -941,19 +960,31 @@
                     savedScenariosDiv.appendChild(scenarioDiv);
                 });
 
-                document.querySelectorAll('.load-scenario-btn').forEach(button => {
-                    button.addEventListener('click', (e) => loadScenario(parseInt(e.currentTarget.dataset.index)));
-                });
+                // 이벤트 위임을 사용하여 savedScenariosDiv에 단일 리스너 추가
+                savedScenariosDiv.removeEventListener('click', handleScenarioActions); // 기존 리스너 제거 (중복 방지)
+                savedScenariosDiv.addEventListener('click', handleScenarioActions);
+            };
 
-                document.querySelectorAll('.delete-scenario-btn').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        // Use a custom message box instead of confirm()
-                        const messageBox = createConfirmBox("이 시나리오를 삭제하시겠습니까?", () => {
-                            deleteScenario(parseInt(e.currentTarget.dataset.index));
-                        });
-                        document.body.appendChild(messageBox);
-                    });
-                });
+            const handleScenarioActions = (e) => {
+                const targetButton = e.target.closest('button'); // 클릭된 요소 또는 가장 가까운 버튼 찾기
+
+                if (targetButton) {
+                    const index = parseInt(targetButton.dataset.index);
+
+                    if (!isNaN(index)) { // 유효한 인덱스인지 확인
+                        if (targetButton.classList.contains('load-scenario-btn')) {
+                            loadScenario(index);
+                        } else if (targetButton.classList.contains('delete-scenario-btn')) {
+                            const messageBox = createConfirmBox("이 시나리오를 삭제하시겠습니까?", () => {
+                                deleteScenario(index);
+                            });
+                            document.body.appendChild(messageBox);
+                        }
+                    } else {
+                        console.error('DEBUG: 클릭된 버튼에서 유효하지 않은 data-index를 감지했습니다:', targetButton.dataset.index);
+                        createMessageBox("시나리오 작업 중 오류가 발생했습니다. 유효하지 않은 데이터입니다.", "error");
+                    }
+                }
             };
 
             saveScenarioBtn.addEventListener('click', saveScenario);
