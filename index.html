@@ -173,7 +173,20 @@
                     </h2>
                     <div class="bg-white bg-opacity-20 rounded-lg p-6 backdrop-blur">
                         <p class="text-lg mb-2">예상 예정임대요율</p>
-                        <p class="text-5xl font-bold" id="finalPredictedRate">-</p>
+                        <p class="text-5xl font-bold mb-4" id="finalPredictedRate">-</p>
+                        <hr class="border-t border-white border-opacity-30 my-4">
+                        <!-- NEW SECTION FOR COMBINATION DETAILS -->
+                        <div id="finalCombinationDetails" class="text-sm">
+                            <p>
+                                <span class="font-bold text-base">선택 요율:</span>
+                                <span id="comboRatesDisplay" class="font-normal"></span>
+                            </p>
+                            <p class="mt-1">
+                                <span class="font-bold text-base">산술평균:</span>
+                                <span id="comboAverageDisplay" class="font-normal"></span>
+                            </p>
+                        </div>
+                        <!-- END NEW SECTION -->
                     </div>
                 </div>
             </div>
@@ -319,6 +332,10 @@
             const finalPredictedRateDisplay = document.getElementById('finalPredictedRate');
             const calculationDetailsDiv = document.getElementById('calculationDetails');
             
+            // NEW: Elements for combination details display
+            const comboRatesDisplay = document.getElementById('comboRatesDisplay');
+            const comboAverageDisplay = document.getElementById('comboAverageDisplay');
+
             // Global variable to store combinations for download
             let globalCombinationsWithAverages = [];
             let finalPredictedRateValue = 0; // 예상 예정임대요율 값을 저장할 변수
@@ -623,6 +640,12 @@
                         // 원본 평균에서 넷째 자리 이하를 버리고 0.0001을 더하는 과정을 구체적인 예시로 설명
                         detail: `산술평균 값 ${predictedRateRaw.toFixed(6)}에서 소수점 넷째 자리 이하를 버리고 (${truncatedPredictedRate.toFixed(4)}), 여기에 0.0001을 더하여 다음 직상위 값으로 올립니다. &rarr; ${predictedRate.toFixed(4)}` 
                     });
+                    
+                    // NEW: Populate the main result display with combination details
+                    const comboRates = highest3OfTop5.map(item => `${item.originalIndex}번`).join(', ');
+                    comboRatesDisplay.textContent = comboRates;
+                    comboAverageDisplay.textContent = `${predictedRateRaw.toFixed(4)}%`;
+
 
                 } else {
                     calculationSteps.push({ step: "계산 불가", detail: "충분한 데이터를 찾을 수 없습니다." });
@@ -826,6 +849,10 @@
                 document.getElementById('combinationsCount').textContent = '0'; // Reset combinations count
                 document.getElementById('scenarioName').value = ''; // Clear scenario name
                 document.getElementById('displayedPredictedRateInCombinations').textContent = '-'; // Clear the new display element
+                
+                // NEW: Clear the new detail display elements
+                comboRatesDisplay.textContent = '';
+                comboAverageDisplay.textContent = '';
 
                 // Clear global combinations
                 globalCombinationsWithAverages = [];
@@ -1065,7 +1092,7 @@
 
                 return confirmBox;
             }
-
+            
             // Function to export combinations to CSV
             document.getElementById('downloadCombinationsBtn').addEventListener('click', () => {
                 if (globalCombinationsWithAverages.length === 0) {
