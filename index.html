@@ -85,7 +85,7 @@
                 <h2 class="text-2xl font-bold text-gray-800 mb-2">
                     <span class="text-blue-600">STEP 1.</span> 복수예비임대요율 입력
                 </h2>
-                <p class="text-gray-600">한국도로공사에서 제시한 15개의 복수예비임대요율을 입력해주세요.</p>
+                <p class="text-gray-600">한국도로공사에서 제시한 13개의 복수예비임대요율을 입력해주세요.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="rate-inputs-container">
@@ -156,7 +156,7 @@
                 </button>
                 <div class="flex gap-2 w-full sm:w-auto">
                     <button id="autoDistribute" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition duration-200">
-                        <i class="fas fa-magic mr-2"></i>자동 분배
+                        <i class="fas fa-random mr-2"></i>자동 분배
                     </button>
                     <button id="nextStep2" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition duration-200">
                         예측 실행 <i class="fas fa-play ml-2"></i>
@@ -275,7 +275,7 @@
             <div class="p-6 space-y-4 overflow-y-auto" style="max-height: calc(90vh - 140px);">
                 <div>
                     <h3 class="font-bold text-lg text-blue-600 mb-2">1단계: 복수예비임대요율 입력</h3>
-                    <p class="text-gray-600">한국도로공사에서 제시한 15개의 복수예비임대요율을 정확히 입력합니다. 
+                    <p class="text-gray-600">한국도로공사에서 제시한 13개의 복수예비임대요율을 정확히 입력합니다. 
                     소수점 넷째 자리까지 입력 가능합니다.</p>
                 </div>
                 <div>
@@ -290,7 +290,7 @@
                 <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <h4 class="font-bold text-blue-800 mb-2">💡 팁</h4>
                     <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
-                        <li>'자동 분배' 기능은 입찰자들이 중간 번호를 선호하는 경향을 반영하여 예상 횟수를 자동으로 채워줍니다.</li>
+                        <li>'자동 분배' 기능은 예상 총 선택 횟수를 13개의 번호에 완전히 무작위로 할당하여 시뮬레이션해 줍니다.</li>
                         <li>여러 시나리오를 저장하고 비교하여 최적의 입찰 전략을 수립해보세요.</li>
                         <li>과거 입찰 데이터를 참고하여 패턴을 분석해보는 것도 좋은 방법입니다.</li>
                         <li>새롭게 추가된 '모든 13C3 조합 분석' 섹션에서는 상위 13개 요율에서 3개를 선택했을 때의 모든 평균값을 확인할 수 있습니다.</li>
@@ -302,7 +302,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const numRates = 15;
+            const numRates = 13;
             const rateInputsContainer = document.getElementById('rate-inputs-container');
             const frequencyTableBody = document.getElementById('frequencyTableBody');
             const expectedBiddersInput = document.getElementById('expectedBidders');
@@ -474,7 +474,7 @@
                 }
             };
 
-            // Auto distribute frequencies (bell curve-like)
+            // Random distribution for frequencies
             document.getElementById('autoDistribute').addEventListener('click', () => {
                 const expectedTotalSelections = parseInt(expectedBiddersInput.value) * parseInt(selectionsPerBidderInput.value);
                 if (isNaN(expectedTotalSelections) || expectedTotalSelections === 0) { 
@@ -485,31 +485,10 @@
                 }
 
                 const frequencies = Array(numRates).fill(0);
-                const centerIndex = Math.floor(numRates / 2); // e.g., 7 for 15 items (0-14)
-
-                // Assign higher weights to center, decreasing outwards
-                const weights = Array(numRates).fill(0);
-                for (let i = 0; i < numRates; i++) {
-                    // Simple linear decrease from center for bell-curve like distribution
-                    weights[i] = numRates - Math.abs(i - centerIndex); 
-                }
-
-                const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-                const cumulativeWeights = [];
-                let cumulativeSum = 0;
-                for (let i = 0; i < numRates; i++) {
-                    cumulativeSum += weights[i];
-                    cumulativeWeights.push(cumulativeSum);
-                }
 
                 for (let i = 0; i < expectedTotalSelections; i++) {
-                    const rand = Math.random() * totalWeight;
-                    for (let j = 0; j < numRates; j++) {
-                        if (rand < cumulativeWeights[j]) {
-                            frequencies[j]++;
-                            break;
-                        }
-                    }
+                    const randomIndex = Math.floor(Math.random() * numRates);
+                    frequencies[randomIndex]++;
                 }
 
                 document.querySelectorAll('#frequencyTableBody input[type="number"]').forEach((freqInput, index) => {
@@ -527,9 +506,7 @@
                         return;
                     }
                     for (let i = start; i < arr.length; i++) {
-                        currentCombination.push(arr[i]);
-                        backtrack(i + 1, currentCombination);
-                        currentCombination.pop();
+                        backtrack(i + 1, [...currentCombination, arr[i]]);
                     }
                 }
                 backtrack(0, []);
@@ -545,7 +522,7 @@
                 // Validate rates
                 const hasEmptyRate = rateInputs.some(input => input.value.trim() === '');
                 if (hasEmptyRate) {
-                    const messageBox = createMessageBox("모든 15개의 복수예비임대요율을 입력해주세요.", "error"); 
+                    const messageBox = createMessageBox("모든 13개의 복수예비임대요율을 입력해주세요.", "error"); 
                     document.body.appendChild(messageBox);
                     setTimeout(() => messageBox.remove(), 3000);
                     return; 
@@ -764,11 +741,8 @@
                     .map(input => parseFloat(input.value))
                     .filter(rate => !isNaN(rate))
                     .sort((a, b) => a - b); // Sort ascending for combinations display
-
-                // Take the top 13 rates for combinations (if available)
-                const ratesForCombinations = allRates.slice(0, 13);
                 
-                const all3Combinations = combinations(ratesForCombinations, 3);
+                const all3Combinations = combinations(allRates, 3);
 
                 const combinationsWithAverages = all3Combinations.map(combo => {
                     const sum = combo.reduce((acc, curr) => acc + curr, 0);
