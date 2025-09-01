@@ -173,20 +173,7 @@
                     </h2>
                     <div class="bg-white bg-opacity-20 rounded-lg p-6 backdrop-blur">
                         <p class="text-lg mb-2">예상 예정임대요율</p>
-                        <p class="text-5xl font-bold mb-4" id="finalPredictedRate">-</p>
-                        <hr class="border-t border-white border-opacity-30 my-4">
-                        <!-- NEW SECTION FOR COMBINATION DETAILS -->
-                        <div id="finalCombinationDetails" class="text-sm">
-                            <p>
-                                <span class="font-bold text-base">선택 요율:</span>
-                                <span id="comboRatesDisplay" class="font-normal"></span>
-                            </p>
-                            <p class="mt-1">
-                                <span class="font-bold text-base">산술평균:</span>
-                                <span id="comboAverageDisplay" class="font-normal"></span>
-                            </p>
-                        </div>
-                        <!-- END NEW SECTION -->
+                        <p class="text-5xl font-bold" id="finalPredictedRate">-</p>
                     </div>
                 </div>
             </div>
@@ -222,10 +209,15 @@
                 </h3>
                 <p class="text-gray-600 mb-4">입력된 요율 중 상위 13개에서 3개를 선택하는 모든 경우의 수 (<strong class="text-blue-600">13C3 = 286가지</strong>)와 그 산술평균을 보여줍니다.</p>
 
-                <!-- NEW: Predicted Rate display in the combination section -->
-                <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                <!-- NEW: Predicted Rate and Combo display in the combination section -->
+                <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center cursor-pointer transition duration-200 hover:bg-blue-100" id="calculatedComboDetails">
                     <p class="text-lg text-gray-700 font-semibold mb-1">계산된 예상 예정임대요율</p>
-                    <p class="text-3xl font-bold text-blue-800" id="displayedPredictedRateInCombinations">-</p>
+                    <p class="text-3xl font-bold text-blue-800 mb-2" id="displayedPredictedRateInCombinations">-</p>
+                    <hr class="border-t border-blue-200 my-2">
+                    <p class="text-sm font-semibold text-blue-700">예측에 사용된 요율</p>
+                    <p class="text-base text-blue-900 font-normal" id="comboRatesDisplay"> - </p>
+                    <p class="text-sm font-semibold text-blue-700 mt-1">산술평균</p>
+                    <p class="text-base text-blue-900 font-normal" id="comboAverageDisplay"> - </p>
                 </div>
                 
                 <!-- NEW DOWNLOAD BUTTON -->
@@ -333,8 +325,10 @@
             const calculationDetailsDiv = document.getElementById('calculationDetails');
             
             // NEW: Elements for combination details display
+            const calculatedComboDetails = document.getElementById('calculatedComboDetails');
             const comboRatesDisplay = document.getElementById('comboRatesDisplay');
             const comboAverageDisplay = document.getElementById('comboAverageDisplay');
+            const displayedPredictedRateInCombinations = document.getElementById('displayedPredictedRateInCombinations');
 
             // Global variable to store combinations for download
             let globalCombinationsWithAverages = [];
@@ -642,9 +636,11 @@
                     });
                     
                     // NEW: Populate the main result display with combination details
-                    const comboRates = highest3OfTop5.map(item => `${item.originalIndex}번`).join(', ');
+                    const comboRates = highest3OfTop5.map(item => `${item.originalIndex}번 요율(${item.rate.toFixed(4)})`).join(', ');
                     comboRatesDisplay.textContent = comboRates;
                     comboAverageDisplay.textContent = `${predictedRateRaw.toFixed(4)}%`;
+
+                    displayedPredictedRateInCombinations.textContent = `${predictedRate.toFixed(4)}%`;
 
 
                 } else {
@@ -790,9 +786,6 @@
                 const combinationsOutput = document.getElementById('combinationsOutput');
                 combinationsOutput.innerHTML = ''; // Clear previous content
 
-                // Update the new display element with the predicted rate
-                document.getElementById('displayedPredictedRateInCombinations').textContent = `${finalPredictedRateValue.toFixed(4)}%`;
-                
                 // Find the combination with the average closest to the final predicted rate
                 let closestAvg = null;
                 let minDifference = Infinity;
@@ -803,13 +796,23 @@
                         closestAvg = item.avg;
                     }
                 });
+                
+                // Track the ID of the highlighted combination to scroll to
+                let highlightedCombinationId = null;
 
                 combinationsWithAverages.forEach((item, index) => {
                     const formattedAvg = item.avg.toFixed(4);
                     const comboDiv = document.createElement('div');
-                    // Add conditional class for highlighting
-                    const highlightClass = (Math.abs(item.avg - closestAvg) < 0.00001) ? 'bg-[#fdefb9]' : 'bg-gray-50';
+                    const isHighlighted = (Math.abs(item.avg - closestAvg) < 0.00001);
+
+                    const highlightClass = isHighlighted ? 'bg-[#fdefb9]' : 'bg-gray-50';
                     comboDiv.className = `flex justify-between items-center text-sm p-2 rounded-md ${highlightClass} hover:bg-gray-100`;
+
+                    if (isHighlighted) {
+                        highlightedCombinationId = `combination-${index}`;
+                        comboDiv.id = highlightedCombinationId; // Assign the ID for scrolling
+                    }
+
                     comboDiv.innerHTML = `
                         <span class="font-medium text-gray-700">${index + 1}. [${item.combo.map(r => r.toFixed(4)).join(', ')}]</span>
                         <span class="font-bold text-blue-700">${formattedAvg}%</span>
@@ -819,6 +822,15 @@
 
                 document.getElementById('combinationsCount').textContent = all3Combinations.length;
 
+                // Scroll to the highlighted element when the combined details div is clicked
+                calculatedComboDetails.onclick = () => {
+                    if (highlightedCombinationId) {
+                        const targetElement = document.getElementById(highlightedCombinationId);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
+                };
 
                 goToStep(2); // Go to results step
             });
@@ -848,11 +860,11 @@
                 document.getElementById('combinationsOutput').innerHTML = ''; // Clear combinations
                 document.getElementById('combinationsCount').textContent = '0'; // Reset combinations count
                 document.getElementById('scenarioName').value = ''; // Clear scenario name
-                document.getElementById('displayedPredictedRateInCombinations').textContent = '-'; // Clear the new display element
                 
                 // NEW: Clear the new detail display elements
-                comboRatesDisplay.textContent = '';
-                comboAverageDisplay.textContent = '';
+                displayedPredictedRateInCombinations.textContent = '-';
+                comboRatesDisplay.textContent = '-';
+                comboAverageDisplay.textContent = '-';
 
                 // Clear global combinations
                 globalCombinationsWithAverages = [];
