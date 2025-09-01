@@ -208,6 +208,12 @@
                     <i class="fas fa-cube mr-2"></i>모든 13C3 조합 분석 (총 <span id="combinationsCount">0</span>개)
                 </h3>
                 <p class="text-gray-600 mb-4">입력된 요율 중 상위 13개에서 3개를 선택하는 모든 경우의 수 (<strong class="text-blue-600">13C3 = 286가지</strong>)와 그 산술평균을 보여줍니다.</p>
+
+                <!-- NEW: Predicted Rate display in the combination section -->
+                <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                    <p class="text-lg text-gray-700 font-semibold mb-1">계산된 예상 예정임대요율</p>
+                    <p class="text-3xl font-bold text-blue-800" id="displayedPredictedRateInCombinations">-</p>
+                </div>
                 
                 <!-- NEW DOWNLOAD BUTTON -->
                 <div class="mt-4 text-right">
@@ -315,6 +321,7 @@
             
             // Global variable to store combinations for download
             let globalCombinationsWithAverages = [];
+            let finalPredictedRateValue = 0; // 예상 예정임대요율 값을 저장할 변수
 
             // Steps navigation
             const steps = ['step1', 'step2', 'step3'];
@@ -590,6 +597,7 @@
                     const truncatedInteger = Math.floor(valueForTruncation);
                     const truncatedPredictedRate = truncatedInteger / 10000;
                     predictedRate = truncatedPredictedRate + 0.0001;
+                    finalPredictedRateValue = predictedRate;
 
 
                     // Generate calculation details
@@ -759,10 +767,26 @@
                 const combinationsOutput = document.getElementById('combinationsOutput');
                 combinationsOutput.innerHTML = ''; // Clear previous content
 
+                // Update the new display element with the predicted rate
+                document.getElementById('displayedPredictedRateInCombinations').textContent = `${finalPredictedRateValue.toFixed(4)}%`;
+                
+                // Find the combination with the average closest to the final predicted rate
+                let closestAvg = null;
+                let minDifference = Infinity;
+                combinationsWithAverages.forEach(item => {
+                    const difference = Math.abs(item.avg - predictedRateRaw); // predictedRateRaw와 비교하여 가장 가까운 산술평균을 찾습니다.
+                    if (difference < minDifference) {
+                        minDifference = difference;
+                        closestAvg = item.avg;
+                    }
+                });
+
                 combinationsWithAverages.forEach((item, index) => {
                     const formattedAvg = item.avg.toFixed(4);
                     const comboDiv = document.createElement('div');
-                    comboDiv.className = 'flex justify-between items-center text-sm p-2 rounded-md bg-gray-50 hover:bg-gray-100';
+                    // Add conditional class for highlighting
+                    const highlightClass = (Math.abs(item.avg - closestAvg) < 0.00001) ? 'bg-[#fdefb9]' : 'bg-gray-50';
+                    comboDiv.className = `flex justify-between items-center text-sm p-2 rounded-md ${highlightClass} hover:bg-gray-100`;
                     comboDiv.innerHTML = `
                         <span class="font-medium text-gray-700">${index + 1}. [${item.combo.map(r => r.toFixed(4)).join(', ')}]</span>
                         <span class="font-bold text-blue-700">${formattedAvg}%</span>
@@ -796,10 +820,12 @@
                 totalFrequencyCell.textContent = '0회';
                 totalPercentageCell.textContent = '';
                 finalPredictedRateDisplay.textContent = '-';
+                finalPredictedRateValue = 0; // Reset the value
                 calculationDetailsDiv.innerHTML = '';
                 document.getElementById('combinationsOutput').innerHTML = ''; // Clear combinations
                 document.getElementById('combinationsCount').textContent = '0'; // Reset combinations count
                 document.getElementById('scenarioName').value = ''; // Clear scenario name
+                document.getElementById('displayedPredictedRateInCombinations').textContent = '-'; // Clear the new display element
 
                 // Clear global combinations
                 globalCombinationsWithAverages = [];
